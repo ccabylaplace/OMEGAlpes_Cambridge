@@ -1,0 +1,11 @@
+\ Model Cambridge_opt_model_no_flex_storage_copy
+\ LP format - for model browsing. Use MPS format to capture full model detail.
+Minimize
+ 
+Subject To
+ storage_node_power_balance_1: heat_pump_heat_prod_p_1
+   - thermocline_storage_p_1 = 1.3843423729999999e+06
+Bounds
+ -infinity <= heat_pump_heat_prod_p_1 <= 100000
+ thermocline_storage_p_1 >= -20000
+End
