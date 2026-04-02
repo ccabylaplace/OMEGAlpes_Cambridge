@@ -79,7 +79,7 @@ def create_scenario_reference(time, bld_df, unit='kW',
         light_fixed = light_df[name].to_list()
         fixed_load = FixedConsumptionUnit(time, name=name, p=app_fixed, energy_type='Elec')
         light_load = FixedConsumptionUnit(time, name=name, p=light_fixed, energy_type='Elec')
-        shiftable_load = FixedConsumptionUnit(time, name=name, power_values=app_shift,
+        shiftable_load = FixedConsumptionUnit(time, name=name, p=app_shift,
                                                       energy_type='Elec')
 
         # Creation of the heat node for the building heating
