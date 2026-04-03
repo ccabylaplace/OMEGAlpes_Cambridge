@@ -74,20 +74,16 @@ def create_scenario_reference(time, bld_df, unit='kW',
     electrical_units = []
     for k in range(len(bld_df)):
         name = bld_df.at[k, 'Name']
-        app_shift = app_df[name, 'shiftable_consumption'].to_list()
-        app_fixed = app_df[name, 'no_shiftable_consumption'].to_list()
+        app_fixed = app_df[name, 'total_consumption'].to_list()
         light_fixed = light_df[name].to_list()
         fixed_load = FixedConsumptionUnit(time, name=name, p=app_fixed, energy_type='Elec')
         light_load = FixedConsumptionUnit(time, name=name, p=light_fixed, energy_type='Elec')
-        shiftable_load = FixedConsumptionUnit(time, name=name, p=app_shift,
-                                                      energy_type='Elec')
 
         # Creation of the heat node for the building heating
         bld_elec_node = EnergyNode(time, 'bld_elec_node_{}_'.format(k),
                                    energy_type='Elec')
 
-        bld_elec_node.connect_units(fixed_load, light_load, shiftable_load
-                                    )
+        bld_elec_node.connect_units(fixed_load, light_load)
 
         elec_nodes.append(bld_elec_node)
 
@@ -150,10 +146,27 @@ def create_flex_scenario_without_lncmi(time, bld_df, obj='CO2', unit='kW',
     # Creation of the heating nodes and heat pumps
     bld_heat_nodes = create_all_heating_nodes(time, bld_df, temp_margin=t_marg,
                                               Tset=T_set)
+    #Adding the elec profiles
+    app_df = pd.read_csv('./data/csv_app_10min.csv', delimiter=';',
+                         header=[0, 1])
+    light_df = pd.read_csv('./data/csv_light_10min.csv', delimiter=';',
+                           header=[0])
+    app_df = app_df.iloc[0:time.LEN]
+    light_df = light_df.iloc[0:time.LEN]
 
+    bld_elec_units = []
+
+    for k in range(len(bld_df)):
+        name = bld_df.at[k, 'Name']
+        app_fixed = app_df[name, 'total_consumption'].to_list()
+        light_fixed = light_df[name].to_list()
+        fixed_load = FixedConsumptionUnit(time, name=name, p=app_fixed, energy_type='Electrical')
+        light_load = FixedConsumptionUnit(time, name=name, p=light_fixed, energy_type='Electrical')
+        bld_elec_units.append(fixed_load)
+        bld_elec_units.append(light_load)
     # Adding constraint on the energy provided by the ground water
     #
-    bld_elec_units = []
+
     # Creation of the objective
     for bld_heat_node in bld_heat_nodes:
         units = bld_heat_node.get_connected_energy_units
