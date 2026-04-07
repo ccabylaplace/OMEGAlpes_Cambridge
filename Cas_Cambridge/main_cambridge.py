@@ -70,24 +70,18 @@ def create_scenario_reference(time, bld_df, unit='kW',
     light_df = light_df.iloc[0:time.LEN]
 
     # Creating the elec loads
-    elec_nodes = []
+    elec_units = []
     electrical_units = []
     for k in range(len(bld_df)):
         name = bld_df.at[k, 'Name']
         app_fixed = app_df[name, 'total_consumption'].to_list()
         light_fixed = light_df[name].to_list()
-        fixed_load = FixedConsumptionUnit(time, name=name, p=app_fixed, energy_type='Elec')
-        light_load = FixedConsumptionUnit(time, name=name, p=light_fixed, energy_type='Elec')
+        fixed_load = FixedConsumptionUnit(time, name=name, p=app_fixed, energy_type='Electrical')
+        light_load = FixedConsumptionUnit(time, name=name, p=light_fixed, energy_type='Electrical')
 
-        # Creation of the heat node for the building heating
-        bld_elec_node = EnergyNode(time, 'bld_elec_node_{}_'.format(k),
-                                   energy_type='Elec')
+        elec_units.append(fixed_load)
+        elec_units.append(light_load)
 
-        bld_elec_node.connect_units(fixed_load, light_load)
-
-        elec_nodes.append(bld_elec_node)
-
-    bld_elec_nodes = elec_nodes
 
     # Adding constraint on the energy provided by the ground water
     #
@@ -107,7 +101,7 @@ def create_scenario_reference(time, bld_df, unit='kW',
             #if isinstance(e_unit, HeatingLoad):
              #   e_unit.add_max_temp_ramp_down(0.2)
 
-    return bld_heat_nodes, bld_elec_nodes
+    return bld_heat_nodes, elec_units
 
 
 def create_flex_scenario_without_lncmi(time, bld_df, obj='CO2', unit='kW',
