@@ -76,8 +76,8 @@ def create_scenario_reference(time, bld_df, unit='kW',
         name = bld_df.at[k, 'Name']
         app_fixed = app_df[name, 'total_consumption'].to_list()
         light_fixed = light_df[name].to_list()
-        fixed_load = FixedConsumptionUnit(time, name=name, p=app_fixed, energy_type='Electrical')
-        light_load = FixedConsumptionUnit(time, name=name, p=light_fixed, energy_type='Electrical')
+        fixed_load = FixedConsumptionUnit(time, name=name + "_app", p=app_fixed, energy_type='Electrical')
+        light_load = FixedConsumptionUnit(time, name=name + "_light", p=light_fixed, energy_type='Electrical')
 
         elec_units.append(fixed_load)
         elec_units.append(light_load)
@@ -154,8 +154,8 @@ def create_flex_scenario_without_lncmi(time, bld_df, obj='CO2', unit='kW',
         name = bld_df.at[k, 'Name']
         app_fixed = app_df[name, 'total_consumption'].to_list()
         light_fixed = light_df[name].to_list()
-        fixed_load = FixedConsumptionUnit(time, name=name, p=app_fixed, energy_type='Electrical')
-        light_load = FixedConsumptionUnit(time, name=name, p=light_fixed, energy_type='Electrical')
+        fixed_load = FixedConsumptionUnit(time, name=name + "_app", p=app_fixed, energy_type='Electrical')
+        light_load = FixedConsumptionUnit(time, name=name + "_light", p=light_fixed, energy_type='Electrical')
         bld_elec_units.append(fixed_load)
         bld_elec_units.append(light_load)
     # Adding constraint on the energy provided by the ground water
