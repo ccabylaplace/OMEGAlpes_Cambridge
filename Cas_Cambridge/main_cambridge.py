@@ -62,9 +62,9 @@ def create_scenario_reference(time, bld_df, unit='kW',
     # Creation of the heating nodes and heat pumps
     bld_heat_nodes = create_all_heating_nodes(time, bld_df, temp_margin=t_marg,
                                               Tset=T_set)
-    app_df = pd.read_csv('./data/csv_app_10min.csv', delimiter=';',
+    app_df = pd.read_csv('./data/csv_app_10min_kW.csv', delimiter=';',
                          header=[0, 1])
-    light_df = pd.read_csv('./data/csv_light_10min.csv', delimiter=';',
+    light_df = pd.read_csv('./data/csv_light_10min_kW.csv', delimiter=';',
                            header=[0])
     app_df = app_df.iloc[0:time.LEN]
     light_df = light_df.iloc[0:time.LEN]
@@ -141,9 +141,9 @@ def create_flex_scenario_without_lncmi(time, bld_df, obj='CO2', unit='kW',
     bld_heat_nodes = create_all_heating_nodes(time, bld_df, temp_margin=t_marg,
                                               Tset=T_set)
     #Adding the elec profiles
-    app_df = pd.read_csv('./data/csv_app_10min.csv', delimiter=';',
+    app_df = pd.read_csv('./data/csv_app_10min_kW.csv', delimiter=';',
                          header=[0, 1])
-    light_df = pd.read_csv('./data/csv_light_10min.csv', delimiter=';',
+    light_df = pd.read_csv('./data/csv_light_10min_kW.csv', delimiter=';',
                            header=[0])
     app_df = app_df.iloc[0:time.LEN]
     light_df = light_df.iloc[0:time.LEN]
