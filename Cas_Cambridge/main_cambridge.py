@@ -50,6 +50,7 @@ import pandas as pd
 
 SAVE_PATH = "C:\\Users\\caby\\Documents\\Analyse IBPSA\\sans_pv\\Sans_charge\\10_min\\"
 
+
 def create_scenario_reference(time, bld_df, unit='kW',
                                        T_set=20, t_marg=1):
     """
