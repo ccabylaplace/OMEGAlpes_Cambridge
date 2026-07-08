@@ -48,7 +48,7 @@ import plotly.express as px
 
 import pandas as pd
 
-SAVE_PATH = "C:\\Users\\caby\\Documents\\Analyse IBPSA\\sans_pv\\Sans_charge\\10_min\\"
+SAVE_PATH = "C:\\Users\\caby\\Documents\\Analyse IBPSA\\sans_pv\\charge_fixe\\weight\\"
 
 
 def create_scenario_reference(time, bld_df, unit='kW',
@@ -63,6 +63,7 @@ def create_scenario_reference(time, bld_df, unit='kW',
     # Creation of the heating nodes and heat pumps
     bld_heat_nodes = create_all_heating_nodes(time, bld_df, temp_margin=t_marg,
                                               Tset=T_set)
+
     app_df = pd.read_csv('./data/csv_app_10min_kW.csv', delimiter=';',
                          header=[0, 1])
     light_df = pd.read_csv('./data/csv_light_10min_kW.csv', delimiter=';',
@@ -98,7 +99,8 @@ def create_scenario_reference(time, bld_df, unit='kW',
                 pmax = e_unit.p.ub
                 e_unit.max_ramp_up = pmax/2
                 # e_unit.minimize_production()
-                parent.elec_consumption_unit.minimize_consumption()
+                parent.elec_consumption_unit.minimize_consumption(weight = 0)
+                elec_units.append(parent.elec_consumption_unit)
             #if isinstance(e_unit, HeatingLoad):
              #   e_unit.add_max_temp_ramp_down(0.2)
 
@@ -173,7 +175,7 @@ def create_flex_scenario_without_lncmi(time, bld_df, obj='CO2', unit='kW',
                 pmax = e_unit.p.ub
                 e_unit.max_ramp_up = pmax/2
                 # e_unit.minimize_production()
-                parent.elec_consumption_unit.minimize_consumption()
+                parent.elec_consumption_unit.minimize_consumption(weight=0)
                 bld_elec_units.append(parent.elec_consumption_unit)
                 # if obj == 'CO2':
                 #     parent.elec_consumption_unit._add_co2_emissions(co2_elec)
@@ -699,6 +701,89 @@ def plot_total_hp_electrical_consumption_comparison(
     fig.write_html(SAVE_PATH + "hp_elec_cons_comparison.html")
     fig.show()
 
+def plot_total_hp_electrical_consumption_comparison_with_elec(
+    coordinated_df,
+    uncoordinated_df,
+    df_elec,
+    start_date,
+    end_date,
+    title="HP electrical consumption – coordinated vs uncoordinated + total elec"
+):
+    import pandas as pd
+    import plotly.express as px
+
+    # --- Compute total HP electrical consumption ---
+    for df in (coordinated_df, uncoordinated_df):
+        cons_cols = [c for c in df.columns if c.endswith("__elec_cons")]
+        df["total_elec_cons"] = df[cons_cols].sum(axis=1)
+
+    # --- Ensure datetime ---
+    for df in (coordinated_df, uncoordinated_df, df_elec):
+        df["date"] = pd.to_datetime(df["date"])
+
+    # --- Filter by date ---
+    coordinated_filtered = coordinated_df[
+        (coordinated_df["date"] >= start_date) &
+        (coordinated_df["date"] <= end_date)
+    ].copy()
+
+    uncoordinated_filtered = uncoordinated_df[
+        (uncoordinated_df["date"] >= start_date) &
+        (uncoordinated_df["date"] <= end_date)
+    ].copy()
+
+    df_elec_filtered = df_elec[
+        (df_elec["date"] >= start_date) &
+        (df_elec["date"] <= end_date)
+    ].copy()
+
+    # --- Merge HP data ---
+    merged_df = pd.merge(
+        uncoordinated_filtered[["date", "total_elec_cons"]],
+        coordinated_filtered[["date", "total_elec_cons"]],
+        on="date",
+        suffixes=("_uncoordinated", "_coordinated")
+    )
+
+    # --- Add total electrical consumption (outside HP) ---
+    merged_df = pd.merge(
+        merged_df,
+        df_elec_filtered[["date", "value"]],
+        on="date",
+        how="left"
+    )
+
+    # --- Rename for clarity ---
+    merged_df = merged_df.rename(columns={
+        "value": "total_elec_outside_hp"
+    })
+
+    # --- Ensure numeric ---
+    value_cols = [c for c in merged_df.columns if c != "date"]
+    merged_df[value_cols] = merged_df[value_cols].apply(
+        pd.to_numeric, errors="coerce"
+    )
+
+    # --- Plot ---
+    fig = px.line(
+        merged_df,
+        x="date",
+        y=value_cols
+    )
+
+    fig.update_layout(
+        title=title,
+        xaxis=dict(title="Date"),
+        yaxis=dict(
+            title="electrical consumption (kW)",
+            rangemode="tozero"
+        ),
+        template="plotly_white",
+        legend=dict(x=0.01, y=0.99)
+    )
+
+    fig.write_html(SAVE_PATH + "hp_elec_cons_comparison.html")
+    fig.show()
 
 def plot_operative_temperature_comparison_building(
     coordinated_df_top,
@@ -859,6 +944,82 @@ def plot_hp_production_comparison_building(
     fig.write_html(SAVE_PATH + "hp_production_comparison.html")
     fig.show()
 
+
+def plot_hp_production_comparison_building_with_elec(
+    coordinated_df,
+    uncoordinated_df,
+    df_elec,
+    building_code,
+    building_index,
+    start_date,
+    end_date,
+    hp_col="heat_pump_0__therm_prod"
+):
+    import pandas as pd
+    import plotly.express as px
+
+    # Title
+    title = f"HP production comparison - building {building_code} (index {building_index})"
+
+    # --- Filter HP data ---
+    coordinated_filtered = coordinated_df[
+        (coordinated_df["date"] >= start_date) &
+        (coordinated_df["date"] <= end_date)
+    ].copy()
+
+    uncoordinated_filtered = uncoordinated_df[
+        (uncoordinated_df["date"] >= start_date) &
+        (uncoordinated_df["date"] <= end_date)
+    ].copy()
+
+    # --- Merge HP ---
+    merged_df = pd.merge(
+        uncoordinated_filtered[["date", hp_col]],
+        coordinated_filtered[["date", hp_col]],
+        on="date",
+        suffixes=("_uncoordinated", "_coordinated")
+    )
+
+    # --- Ajouter df_elec ---
+    # ⚠️ df_elec doit avoir une colonne "date"
+    df_elec_filtered = df_elec[
+        (df_elec["date"] >= start_date) &
+        (df_elec["date"] <= end_date)
+    ].copy()
+
+    merged_df = pd.merge(
+        merged_df,
+        df_elec_filtered[["date", "value"]],
+        on="date",
+        how="left"
+    )
+    # --- Reshape ---
+    melted_df = merged_df.melt(
+        id_vars="date",
+        var_name="Scenario",
+        value_name="Value"
+    )
+
+    # --- Renommage ---
+    melted_df["Scenario"] = melted_df["Scenario"].map({
+        f"{hp_col}_uncoordinated": "Uncoordinated",
+        f"{hp_col}_coordinated": "Coordinated",
+        "value": "Electric consumption"
+    })
+
+    # --- Plot ---
+    fig = px.line(
+        melted_df,
+        x="date",
+        y="Value",
+        color="Scenario",
+        title=title,
+        labels={"Value": "kW", "date": "Date"}
+    )
+
+    fig.update_layout(template="plotly_white")
+    fig.write_html(SAVE_PATH + "hp_production_comparison_with_elec.html")
+    fig.show()
 
 def prepare_elec_consumption_comparison(
     coordinated_df,
