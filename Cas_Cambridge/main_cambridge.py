@@ -52,7 +52,7 @@ SAVE_PATH = "C:\\Users\\caby\\Documents\\Analyse IBPSA\\sans_pv\\charge_fixe\\we
 
 
 def create_scenario_reference(time, bld_df, unit='kW',
-                                       T_set=20, t_marg=1):
+                                       T_set=20, t_marg=1, obj='cost'):
     """
 
     :param time:
@@ -60,6 +60,16 @@ def create_scenario_reference(time, bld_df, unit='kW',
     :param unit:
     :return:
     """
+    # Adding CO2 rate
+    # Electrical cost
+    elec_opex_df = select_csv_file_between_dates('./data/Elec_opex_kwh.csv',
+                                                start=time.DATES[0],
+                                                end=time.DATES[-1], sep=';',
+                                               )
+
+
+    # Convert into 10 minutes
+    opex_elec = convert_hourly_data_into_static_values(elec_opex_df, dt=time.DT)
     # Creation of the heating nodes and heat pumps
     bld_heat_nodes = create_all_heating_nodes(time, bld_df, temp_margin=t_marg,
                                               Tset=T_set)
@@ -101,6 +111,12 @@ def create_scenario_reference(time, bld_df, unit='kW',
                 # e_unit.minimize_production()
                 parent.elec_consumption_unit.minimize_consumption(weight = 0)
                 elec_units.append(parent.elec_consumption_unit)
+                if obj == 'CO2':
+                    parent.elec_consumption_unit._add_co2_emissions(co2_elec)
+                    parent.elec_consumption_unit.minimize_co2_emissions()
+                elif obj == 'cost':
+                    e_unit._add_operating_cost(opex_elec)
+                    e_unit.minimize_production()
             #if isinstance(e_unit, HeatingLoad):
              #   e_unit.add_max_temp_ramp_down(0.2)
 

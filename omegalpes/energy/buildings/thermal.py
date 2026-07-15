@@ -668,11 +668,11 @@ class HeatingLoad(VariableConsumptionUnit):
         diff = def_abs_value(self.diff_Top_opt, q_max=self.temp_margin,
                              q_min=-self.temp_margin)
 
-        self.max_th_comfort = Objective(name='max_th_comfort',
+        """self.max_th_comfort = Objective(name='max_th_comfort',
                                         exp='lpSum({0}_{1}[t] for t in '
                                              'time.I[72:])'.format(self.name,
                                                               diff.name),
-                                        parent=self)
+                                        parent=self)"""
 
 
 def calc_Am(Cm_Af, Af):
