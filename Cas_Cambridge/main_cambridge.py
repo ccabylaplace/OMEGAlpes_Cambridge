@@ -70,6 +70,20 @@ def create_scenario_reference(time, bld_df, unit='kW',
 
     # Convert into 10 minutes
     opex_elec = convert_hourly_data_into_static_values(elec_opex_df, dt=time.DT)
+
+    # Adding CO2 rate
+    # Electrical CO2 emissions
+    elec_CO2_df = select_csv_file_between_dates('./data/Elec_co2_em.csv',
+                                                start=time.DATES[0],
+                                                end=time.DATES[-1], sep=';',
+                                                v_cols=['Elec_CO2_em[g/kWh]'])
+
+    # CO2 emissions [kg/kWh]
+    CO2_emissions = [e / 1000 for e in elec_CO2_df['Elec_CO2_em[g/kWh]']]
+
+    # Convert into 10 minutes
+    co2_elec = convert_hourly_data_into_static_values(CO2_emissions, dt=time.DT)
+    
     # Creation of the heating nodes and heat pumps
     bld_heat_nodes = create_all_heating_nodes(time, bld_df, temp_margin=t_marg,
                                               Tset=T_set)
@@ -115,8 +129,9 @@ def create_scenario_reference(time, bld_df, unit='kW',
                     parent.elec_consumption_unit._add_co2_emissions(co2_elec)
                     parent.elec_consumption_unit.minimize_co2_emissions()
                 elif obj == 'cost':
-                    e_unit._add_operating_cost(opex_elec)
-                    e_unit.minimize_production()
+                    parent.elec_consumption_unit._add_co2_emissions(opex_elec)
+                    parent.elec_consumption_unit.minimize_co2_emissions()
+                    #e_unit.minimize_production()
             #if isinstance(e_unit, HeatingLoad):
              #   e_unit.add_max_temp_ramp_down(0.2)
 
