@@ -61,15 +61,11 @@ def create_scenario_reference(time, bld_df, unit='kW',
     :return:
     """
     # Adding CO2 rate
-    # Electrical cost
-    elec_opex_df = select_csv_file_between_dates('./data/Elec_opex_kwh.csv',
-                                                start=time.DATES[0],
-                                                end=time.DATES[-1], sep=';',
-                                               )
+
 
 
     # Convert into 10 minutes
-    opex_elec = convert_hourly_data_into_static_values(elec_opex_df, dt=time.DT)
+    #opex_elec = convert_hourly_data_into_static_values(elec_opex_df, dt=time.DT)
 
     # Adding CO2 rate
     # Electrical CO2 emissions
@@ -128,9 +124,9 @@ def create_scenario_reference(time, bld_df, unit='kW',
                 if obj == 'CO2':
                     parent.elec_consumption_unit._add_co2_emissions(co2_elec)
                     parent.elec_consumption_unit.minimize_co2_emissions()
-                elif obj == 'cost':
+                """elif obj == 'cost':
                     parent.elec_consumption_unit._add_co2_emissions(opex_elec)
-                    parent.elec_consumption_unit.minimize_co2_emissions()
+                    parent.elec_consumption_unit.minimize_co2_emissions()"""
                     #e_unit.minimize_production()
             #if isinstance(e_unit, HeatingLoad):
              #   e_unit.add_max_temp_ramp_down(0.2)
